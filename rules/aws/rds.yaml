@@ -1,0 +1,101 @@
+rules:
+  - id: A-RDS-1
+    name: Publicly Reachable RDS with Credential Stuffing Exposure
+    severity: CRITICAL
+    description: RDS endpoint is externally reachable on common database ports, enabling credential stuffing attempts; this scenario validates exposure via nmap, executes common-password login attempts, and measures GuardDuty RDS alert latency.
+    check:
+      field: rds.endpoint.public_access
+      operator: equals
+      value: true
+      port:
+        - 3306
+        - 5432
+    remediation: Restrict RDS network access to trusted private sources, enforce strong password policy and rotation, enable IAM/Secrets-based auth where possible, and tune GuardDuty response workflows to reduce detection latency.
+    benchmarks:
+      cis_control: "4.1, 6.3"
+      nist_csf: "PR.AC-1, DE.CM-1"
+      mitre_technique: "T1110"
+    chaos_trigger:
+      experiment: simulate_db_brute_force
+      target_type: rds_instance      
+      impact: remote_access_exposure
+  - id: A-RDS-2
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_db_corruption
+        target_type:
+        impact:
+  - id: A-RDS-3
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_snapshot_data_leak
+        target_type:
+        impact:
+  - id: A-RDS-4
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_az_failure
+        target_type:
+        impact:
+  - id: A-RDS-5
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_internal_lateral_db_access
+        target_type:
+        impact:

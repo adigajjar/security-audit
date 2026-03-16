@@ -1,0 +1,101 @@
+rules:
+  - id: A-LAM-1
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_lambda_role_abuse
+        target_type:
+        impact:
+  - id: A-LAM-2
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_env_var_secret_harvest
+        target_type:
+        impact:
+  - id: A-LAM-3
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_unauthenticated_invocation
+        target_type:
+        impact:
+  - id: A-LAM-4
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_silent_function_failure
+        target_type:
+        impact:
+  - id: A-LAM-5
+    name: 
+    severity:
+    description:
+    check:
+      field:
+      operator:
+      value:
+      port:
+        - 
+        - 
+      remediation:
+      benchmarks:
+        cis_control:
+        nist_csf:
+        mitre_technique:
+      chaos_trigger:
+        experiment: simulate_supply_chain_exploit
+        target_type:
+        impact:

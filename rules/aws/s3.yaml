@@ -1,0 +1,101 @@
+rules:
+  - id: A-S3-1
+    name: Block Public Access Disabled
+    severity: CRITICAL
+    description: S3 Block Public Access is disabled which may allow public exposure of sensitive data.
+    check:
+      field: public_access_block.BlockPublicAcls
+      operator: equals
+      value: false
+    remediation: Enable S3 Block Public Access for the bucket and at the account level.
+    benchmarks:
+      cis_control:
+        v1.4: "2.1.5"
+        v1.5: "2.1.4"
+      nist_csf: "PR.DS-1"
+      mitre_technique: "T1530"
+    chaos_trigger:
+      experiment: simulate_data_exfiltration
+      target_type: storage_bucket
+      impact: data_exposure
+
+  - id: A-S3-2
+    name: Server-Side Encryption Not Enforced
+    severity: HIGH
+    description: Server-side encryption is not enforced on the S3 bucket, allowing objects to be stored without encryption.
+    check:
+      field: bucket.encryption.enabled
+      operator: equals
+      value: false
+    remediation: Configure bucket policies to enforce server-side encryption using SSE-S3 or SSE-KMS.
+    benchmarks:
+      cis_control:
+        v1.4: "2.1.1"
+        v1.5: "2.1.1"
+      nist_csf: "PR.DS-1"
+      mitre_technique: "T1040"
+    chaos_trigger:
+      experiment: simulate_unencrypted_write
+      target_type: storage_bucket
+      impact: sensitive_data_exposure
+
+  - id: A-S3-3
+    name: Versioning and MFA-Delete Disabled
+    severity: MEDIUM
+    description: Bucket versioning and MFA-Delete are disabled which increases the risk of accidental or malicious data deletion.
+    check:
+      field: bucket.versioning
+      operator: equals
+      value: disabled
+    remediation: Enable versioning and MFA-Delete to protect against accidental or unauthorized deletion.
+    benchmarks:
+      cis_control:
+        v1.4: "2.1.3"
+        v1.5: "2.1.2"
+      nist_csf: "PR.IP-4"
+      mitre_technique: "T1485"
+    chaos_trigger:
+      experiment: simulate_ransomware_delete
+      target_type: storage_bucket
+      impact: data_loss
+
+  - id: A-S3-4
+    name: Overly Permissive Bucket Policy (Cross-Account)
+    severity: HIGH
+    description: Bucket policy allows access from external AWS accounts which may lead to unauthorized data access.
+    check:
+      field: bucket.policy.principal
+      operator: equals
+      value: "*"
+    remediation: Restrict bucket policies to specific AWS principals and remove wildcard access.
+    benchmarks:
+      cis_control:
+        v1.4: null
+        v1.5: null
+        note: "No discrete CIS AWS S3 control for cross-account wildcard policy. Closest anchor is IAM least-privilege section."
+      nist_csf: "PR.AC-3"
+      mitre_technique: "T1537"
+    chaos_trigger:
+      experiment: simulate_cross_account_data_access
+      target_type: storage_bucket
+      impact: unauthorized_data_access
+
+  - id: A-S3-5
+    name: Access Logging Disabled
+    severity: MEDIUM
+    description: S3 access logging is disabled which reduces visibility into bucket access and potential misuse.
+    check:
+      field: bucket.logging.enabled
+      operator: equals
+      value: false
+    remediation: Enable server access logging for the bucket and store logs in a separate logging bucket.
+    benchmarks:
+      cis_control:
+        v1.4: "2.1.6"
+        v1.5: "2.1.5"
+      nist_csf: "DE.AE-3"
+      mitre_technique: "T1070"
+    chaos_trigger:
+      experiment: simulate_silent_exfiltration
+      target_type: storage_bucket
+      impact: reduced_audit_visibility

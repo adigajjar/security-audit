@@ -1,101 +1,86 @@
 rules:
   - id: A-LAM-1
-    name: 
-    severity:
-    description:
+    name: Excessive Lambda Role Permissions (AssumeRole Abuse)
+    severity: CRITICAL
+    description: A crafted invocation payload can trigger sts:AssumeRole from the Lambda execution context, enabling resource enumeration and privilege expansion; this scenario validates reachable roles and measures effective blast radius.
+    type: privilege_escalation
     check:
-      field:
-      operator:
-      value:
-      port:
-        - 
-        - 
-      remediation:
-      benchmarks:
-        cis_control:
-        nist_csf:
-        mitre_technique:
-      chaos_trigger:
-        experiment: simulate_lambda_role_abuse
-        target_type:
-        impact:
+      operator: equals
+      value: true
+    remediation: Apply least-privilege IAM policies to Lambda roles, explicitly deny unnecessary sts:AssumeRole actions, and scope trust policies to approved principals and conditions.
+    benchmarks:
+      cis_control: "6.8"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1078"
+    chaos_trigger:
+      experiment: simulate_lambda_role_abuse
+      target_type: lambda_function
+      impact: privilege_escalation_blast_radius
   - id: A-LAM-2
-    name: 
-    severity:
-    description:
+    name: Environment Secret Exposure via Error Paths
+    severity: HIGH
+    description: Function invocation can leak environment variables through verbose error responses, allowing adversaries to harvest secrets and attempt authentication against downstream services.
+    type: secret_exposure
     check:
-      field:
-      operator:
-      value:
-      port:
-        - 
-        - 
-      remediation:
-      benchmarks:
-        cis_control:
-        nist_csf:
-        mitre_technique:
-      chaos_trigger:
-        experiment: simulate_env_var_secret_harvest
-        target_type:
-        impact:
+      operator: equals
+      value: true
+    remediation: Store secrets in AWS Secrets Manager or Parameter Store with KMS protection, sanitize error output, and prevent secret material from being returned in logs or API responses.
+    benchmarks:
+      cis_control: "3.4, 3.12"
+      nist_csf: "PR.DS-1"
+      mitre_technique: "T1552"
+    chaos_trigger:
+      experiment: simulate_env_var_secret_harvest
+      target_type: lambda_function
+      impact: credential_exposure
   - id: A-LAM-3
-    name: 
-    severity:
-    description:
+    name: Unauthenticated Lambda URL Invocation Exposure
+    severity: CRITICAL
+    description: Lambda function URL is reachable without credentials, enabling unauthenticated invocation, SSRF payload testing, and high-frequency request abuse that can exhaust resources.
+    type: unauthenticated_access
     check:
-      field:
-      operator:
-      value:
-      port:
-        - 
-        - 
-      remediation:
-      benchmarks:
-        cis_control:
-        nist_csf:
-        mitre_technique:
-      chaos_trigger:
-        experiment: simulate_unauthenticated_invocation
-        target_type:
-        impact:
+      operator: equals
+      value: NONE
+    remediation: Require IAM or authorizer-based authentication for function URLs, enforce WAF/rate limiting, and validate inputs to block SSRF-style payloads.
+    benchmarks:
+      cis_control: "6.7, 13.2"
+      nist_csf: "PR.AC-1, DE.CM-1"
+      mitre_technique: "T1190"
+    chaos_trigger:
+      experiment: simulate_unauthenticated_invocation
+      target_type: lambda_function_url
+      impact: unauthorized_invocation_and_resource_exhaustion
   - id: A-LAM-4
-    name: 
-    severity:
-    description:
+    name: No DLQ Causes Silent Event Loss on Failure
+    severity: HIGH
+    description: Intentional function failures can silently drop events when no dead-letter queue is configured, creating undetected data pipeline gaps and delayed recovery.
+    type: reliability_gap
     check:
-      field:
-      operator:
-      value:
-      port:
-        - 
-        - 
-      remediation:
-      benchmarks:
-        cis_control:
-        nist_csf:
-        mitre_technique:
-      chaos_trigger:
-        experiment: simulate_silent_function_failure
-        target_type:
-        impact:
+      operator: equals
+      value: false
+    remediation: Configure DLQ or on-failure destinations for asynchronous invocations, alert on retry exhaustion, and monitor end-to-end pipeline lag and drop rates.
+    benchmarks:
+      cis_control: "8.2, 8.11"
+      nist_csf: "DE.AE-3, RC.RP-1"
+      mitre_technique: "T1489"
+    chaos_trigger:
+      experiment: simulate_silent_function_failure
+      target_type: lambda_function
+      impact: data_pipeline_gap
   - id: A-LAM-5
-    name: 
-    severity:
-    description:
+    name: Lambda Runtime Package Vulnerability (Supply Chain Risk)
+    severity: HIGH
+    description: A proof-of-concept package can trigger a known vulnerability in the Lambda runtime dependency chain; this scenario observes exploit behaviour and confirms whether Inspector detects the vulnerable component.
+    type: supply_chain_risk
     check:
-      field:
-      operator:
-      value:
-      port:
-        - 
-        - 
-      remediation:
-      benchmarks:
-        cis_control:
-        nist_csf:
-        mitre_technique:
-      chaos_trigger:
-        experiment: simulate_supply_chain_exploit
-        target_type:
-        impact:
+      operator: equals
+      value: true
+    remediation: Pin and regularly update dependencies, enforce signed artifact pipelines, enable Inspector and CI vulnerability gates, and remove vulnerable packages before deployment.
+    benchmarks:
+      cis_control: "16.2, 16.13"
+      nist_csf: "ID.RA-1, PR.IP-12"
+      mitre_technique: "T1195"
+    chaos_trigger:
+      experiment: simulate_supply_chain_exploit
+      target_type: lambda_runtime
+      impact: runtime_compromise_risk

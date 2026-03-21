@@ -40,14 +40,14 @@ rules:
       impact: sensitive_data_exposure
 
   - id: A-S3-3
-    name: Versioning and MFA-Delete Disabled
+    name: Versioning Disabled
     severity: MEDIUM
-    description: Bucket versioning and MFA-Delete are disabled which increases the risk of accidental or malicious data deletion.
+    description: Bucket versioning is disabled which increases the risk of data loss from accidental deletion or overwrites.
     check:
-      field: bucket.versioning
+      field: bucket.versioning_enabled
       operator: equals
-      value: disabled
-    remediation: Enable versioning and MFA-Delete to protect against accidental or unauthorized deletion.
+      value: false
+    remediation: Enable versioning for the S3 bucket to maintain object history and allow recovery.
     benchmarks:
       cis_control:
         v1.4: "2.1.3"
@@ -60,14 +60,34 @@ rules:
       impact: data_loss
 
   - id: A-S3-4
-    name: Overly Permissive Bucket Policy (Cross-Account)
-    severity: HIGH
-    description: Bucket policy allows access from external AWS accounts which may lead to unauthorized data access.
+    name: MFA-Delete Disabled
+    severity: MEDIUM
+    description: MFA-Delete is disabled for the S3 bucket. This means versioning status cannot be changed and versions cannot be permanently deleted without additional multi-factor authentication.
     check:
-      field: bucket.policy.principal
+      field: bucket.mfa_delete_enabled
       operator: equals
-      value: "*"
-    remediation: Restrict bucket policies to specific AWS principals and remove wildcard access.
+      value: false
+    remediation: Enable MFA-Delete for the S3 bucket to provide an extra layer of security against malicious deletion.
+    benchmarks:
+      cis_control:
+        v1.4: "2.1.3"
+        v1.5: "2.1.2"
+      nist_csf: "PR.IP-4"
+      mitre_technique: "T1485"
+    chaos_trigger:
+      experiment: simulate_unauthorized_purge
+      target_type: storage_bucket
+      impact: permanent_data_deletion
+
+  - id: A-S3-5
+    name: Publicly Accessible Bucket Policy
+    severity: HIGH
+    description: The bucket policy is overly permissive, allowing public or broad access which may lead to unauthorized data disclosure.
+    check:
+      field: bucket.policy_allows_public
+      operator: equals
+      value: true
+    remediation: Restrict bucket policies to specific authorized AWS principals and remove public access.
     benchmarks:
       cis_control:
         v1.4: null
@@ -80,7 +100,7 @@ rules:
       target_type: storage_bucket
       impact: unauthorized_data_access
 
-  - id: A-S3-5
+  - id: A-S3-6
     name: Access Logging Disabled
     severity: MEDIUM
     description: S3 access logging is disabled which reduces visibility into bucket access and potential misuse.

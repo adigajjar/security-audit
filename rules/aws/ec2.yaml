@@ -1,15 +1,12 @@
 rules:
   - id: A-EC2-1
-    name: Security Group Allows 0.0.0.0/0 on SSH/RDP
+    name: Security Group Should Not Allow 0.0.0.0/0 on SSH/RDP
     severity: CRITICAL
     description: Security group allows unrestricted internet access to SSH or RDP which can expose instances to brute force attacks.
+    type: open_ingress
     check:
-      field: security_group.ingress.cidr
       operator: equals
       value: "0.0.0.0/0"
-      port:
-        - 22
-        - 3389
     remediation: Restrict SSH/RDP access to trusted IP addresses or use a bastion host or VPN.
     benchmarks:
       cis_control: "4.1, 4.2"
@@ -21,13 +18,13 @@ rules:
       impact: remote_access_exposure
 
   - id: A-EC2-2
-    name: IMDSv1 Enabled (SSRF Risk)
+    name: IMDSv2 Disabled
     severity: HIGH
-    description: Instance Metadata Service version 1 is enabled which may allow attackers to steal IAM credentials via SSRF attacks.
+    description: Instance Metadata Service version 2 is not enforced which may allow attackers to steal IAM credentials via SSRF attacks.
+    type: imdsv2_enforced
     check:
-      field: instance.metadata_options.http_tokens
       operator: equals
-      value: "optional"
+      value: false
     remediation: Enforce IMDSv2 by setting metadata option http_tokens to required.
     benchmarks:
       cis_control: "1.5"
@@ -38,30 +35,30 @@ rules:
       target_type: ec2_instance
       impact: credential_exposure
 
-  - id: A-EC2-3
-    name: Unpatched AMI with Known CVEs
-    severity: HIGH
-    description: The AMI used by the instance contains packages with known vulnerabilities.
-    check:
-      field: ami.vulnerability_count
-      operator: greater_than
-      value: 0
-    remediation: Update AMI with the latest security patches or use a patched base image.
-    benchmarks:
-      cis_control: "1.4"
-      nist_csf: "PR.IP-12"
-      mitre_technique: "T1190"
-    chaos_trigger:
-      experiment: simulate_vuln_exploit_cascade
-      target_type: ec2_instance
-      impact: system_compromise
+  # - id: A-EC2-3
+  #   name: Unpatched AMI with Known CVEs
+  #   severity: HIGH
+  #   description: The AMI used by the instance contains packages with known vulnerabilities.
+  #   type: ami_vulnerability_count
+  #   check:
+  #     operator: greater_than
+  #     value: 0
+  #   remediation: Update AMI with the latest security patches or use a patched base image.
+  #   benchmarks:
+  #     cis_control: "1.4"
+  #     nist_csf: "PR.IP-12"
+  #     mitre_technique: "T1190"
+  #   chaos_trigger:
+  #     experiment: simulate_vuln_exploit_cascade
+  #     target_type: ec2_instance
+  #     impact: system_compromise
 
   - id: A-EC2-4
     name: EBS Volume Not Encrypted
     severity: MEDIUM
     description: EBS volumes are not encrypted which may expose sensitive data if the storage is accessed improperly.
+    type: ebs_encrypted
     check:
-      field: ebs.encrypted
       operator: equals
       value: false
     remediation: Enable encryption for EBS volumes using AWS KMS keys.
@@ -78,8 +75,8 @@ rules:
     name: Publicly Exposed AMI Snapshot
     severity: HIGH
     description: AMI snapshot is publicly shared which allows unauthorized users to copy or analyze the image.
+    type: snapshot_public
     check:
-      field: snapshot.public
       operator: equals
       value: true
     remediation: Restrict snapshot permissions to specific AWS accounts and remove public access.

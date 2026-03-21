@@ -7,25 +7,34 @@ import (
 type ExtractorFunc func(data interface{}) []interface{}
 
 var registry = map[string]ExtractorFunc{
-	"open_ingress": extractIngressCidrs,
+	//EC2 handlers
+	"open_ingress":    extractIngressCidrs,
 	"imdsv2_enforced": extractImdsv2Status,
 	// "ami_vulnerability_count": extractAmiVulnCount,
-	"ebs_encrypted": extractEbsEncryption,
+	"ebs_encrypted":   extractEbsEncryption,
 	"snapshot_public": extractSnapshotPublic,
+	// RDS handlers
+	"network_exposure":        extractRdsPubliclyAccessible,
+	"backup_recovery":         extractRdsBackupRetention,
+	"snapshot_data_exposure":  extractRdsSnapshotEncryption,
+	"availability_resilience": extractRdsMultiAZ,
+	"lateral_movement":        extractRdsLateralAccess,
+	"rds_snapshot_public":     extractRdsSnapshotPublic,
 }
 
+// ===== EC2 Handlers =====
 func extractIngressCidrs(data interface{}) []interface{} {
 	ec2, ok := data.(scanner.Ec2AuditResults)
-	if !ok{
+	if !ok {
 		return nil
 	}
 
 	var results []interface{}
 
-	for _, sg := range ec2.SecurityGroups{
-		for _, perm := range sg.IpPermissions{
-			for _, r := range perm.IpRanges{
-				if r.CidrIp != nil{
+	for _, sg := range ec2.SecurityGroups {
+		for _, perm := range sg.IpPermissions {
+			for _, r := range perm.IpRanges {
+				if r.CidrIp != nil {
 					results = append(results, *r.CidrIp)
 				}
 			}
@@ -55,8 +64,7 @@ func extractImdsv2Status(data interface{}) []interface{} {
 	return results
 }
 
-
-func extractEbsEncryption(data interface {}) []interface{} {
+func extractEbsEncryption(data interface{}) []interface{} {
 	ec2, ok := data.(scanner.Ec2AuditResults)
 	if !ok {
 		return nil
@@ -76,19 +84,17 @@ func extractEbsEncryption(data interface {}) []interface{} {
 }
 
 func extractSnapshotPublic(data interface{}) []interface{} {
-    ec2, ok := data.(scanner.Ec2AuditResults)
-    if !ok {
-        return nil
-    }
+	ec2, ok := data.(scanner.Ec2AuditResults)
+	if !ok {
+		return nil
+	}
 
-    var results []interface{}
-    for _, snapshotId := range ec2.PublicSnapshots {
-        results = append(results, snapshotId)
-    }
-    return results
+	var results []interface{}
+	for _, snapshotId := range ec2.PublicSnapshots {
+		results = append(results, snapshotId)
+	}
+	return results
 }
-
-
 
 // func extractAmiVulnCount(data interface{}) []interface{} {
 // 	ec2, ok := data.(scanner.Ec2AuditResults)
@@ -98,6 +104,109 @@ func extractSnapshotPublic(data interface{}) []interface{} {
 
 // 	var results []interface{}
 
-
 // 	return results
 // }
+
+// ===== RDS Handlers =====
+func extractRdsPubliclyAccessible(data interface{}) []interface{} {
+	rds, ok := data.(scanner.RdsAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	for _, db := range rds.DBInstances {
+		if db.PubliclyAccessible != nil {
+			results = append(results, *db.PubliclyAccessible)
+		} else {
+			results = append(results, false)
+		}
+	}
+	return results
+}
+
+func extractRdsBackupRetention(data interface{}) []interface{} {
+	rds, ok := data.(scanner.RdsAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	for _, db := range rds.DBInstances {
+		if db.BackupRetentionPeriod != nil {
+			results = append(results, int(*db.BackupRetentionPeriod))
+		} else {
+			results = append(results, 0)
+		}
+	}
+	return results
+}
+
+func extractRdsSnapshotEncryption(data interface{}) []interface{} {
+	rds, ok := data.(scanner.RdsAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	for _, snapshot := range rds.DBSnapshots {
+		if snapshot.Encrypted != nil {
+			results = append(results, *snapshot.Encrypted)
+		} else {
+			results = append(results, false)
+		}
+	}
+	return results
+}
+
+func extractRdsMultiAZ(data interface{}) []interface{} {
+	rds, ok := data.(scanner.RdsAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	for _, db := range rds.DBInstances {
+		if db.MultiAZ != nil {
+			results = append(results, *db.MultiAZ)
+		} else {
+			results = append(results, false)
+		}
+	}
+	return results
+}
+
+func extractRdsLateralAccess(data interface{}) []interface{} {
+	rds, ok := data.(scanner.RdsAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	// For lateral movement, we check if DB is in VPC and not public
+	// If it's accessible within VPC, it could allow lateral movement
+	for _, db := range rds.DBInstances {
+		lateralAccessPossible := false
+		if db.PubliclyAccessible != nil && !*db.PubliclyAccessible {
+			// If not public but in VPC, lateral access is possible
+			if db.DBSubnetGroup != nil && db.DBSubnetGroup.VpcId != nil {
+				lateralAccessPossible = true
+			}
+		}
+		results = append(results, lateralAccessPossible)
+	}
+	return results
+}
+
+func extractRdsSnapshotPublic(data interface{}) []interface{} {
+	rds, ok := data.(scanner.RdsAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	for _, snapshotId := range rds.PublicSnapshots {
+		results = append(results, snapshotId)
+	}
+	return results
+}

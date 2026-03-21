@@ -1,0 +1,86 @@
+rules:
+  - id: A-RDS-1
+    name: Publicly Reachable RDS with Credential Stuffing Exposure
+    severity: CRITICAL
+    description: RDS endpoint is externally reachable on common database ports, enabling credential stuffing attempts; this scenario validates exposure via nmap, executes common-password login attempts, and measures GuardDuty RDS alert latency.
+    type: network_exposure
+    check:
+      operator: equals
+      value: true
+    remediation: Restrict RDS network access to trusted private sources, enforce strong password policy and rotation, enable IAM/Secrets-based auth where possible, and tune GuardDuty response workflows to reduce detection latency.
+    benchmarks:
+      cis_control: "4.1, 6.3"
+      nist_csf: "PR.AC-1, DE.CM-1"
+      mitre_technique: "T1110"
+    chaos_trigger:
+      experiment: simulate_db_brute_force
+      target_type: rds_instance      
+      impact: remote_access_exposure
+  - id: A-RDS-2
+    name: Automated Backups Disabled (PITR Not Possible)
+    severity: HIGH
+    description: Automated backups are disabled, preventing effective point-in-time restore; this scenario drops a non-critical test table, attempts PITR, and measures recovery time objective (RTO) differences when backups are absent versus enabled.
+    type: backup_recovery
+    check:
+      operator: equals
+      value: 0
+    remediation: Enable automated backups with an appropriate retention period, validate point-in-time restore procedures regularly, and define RTO/RPO targets with runbooks for recovery drills.
+    benchmarks:
+      cis_control: "11.1, 11.3"
+      nist_csf: "PR.IP-4, RC.RP-1"
+      mitre_technique: "T1499"
+    chaos_trigger:
+      experiment: simulate_db_corruption
+      target_type: rds_instance
+      impact: extended_recovery_time
+  - id: A-RDS-3
+    name: Unencrypted Snapshot Exported to S3 (Data Exposure)
+    severity: HIGH
+    description: RDS snapshot is unencrypted and can be exported to S3 where data is readable without KMS decryption; this scenario exports an unencrypted snapshot, reads data from the export, and confirms no KMS decrypt path is required.
+    type: snapshot_data_exposure
+    check:
+      operator: equals
+      value: false
+    remediation: Enforce encryption for all RDS snapshots with customer-managed KMS keys, restrict snapshot export permissions, and apply strict S3 bucket/KMS policies to prevent plaintext data access.
+    benchmarks:
+      cis_control: "3.11, 3.12"
+      nist_csf: "PR.DS-1, PR.DS-5"
+      mitre_technique: "T1537"
+    chaos_trigger:
+      experiment: simulate_snapshot_data_leak
+      target_type: rds_snapshot
+      impact: sensitive_data_exposure
+  - id: A-RDS-4
+    name: Single-AZ RDS Resilience Gap (AZ Failure Downtime)
+    severity: HIGH
+    description: An AZ-level network blackhole on the DB subnet can cause extended downtime when failover is not optimized; this scenario injects AZ disruption, measures outage and failover duration, and compares outcomes with a Multi-AZ baseline.
+    type: availability_resilience
+    check:
+      operator: equals
+      value: false
+    remediation: Enable Multi-AZ deployment for production databases, validate automatic failover behavior in regular game days, and set SLOs for failover duration and application reconnect time.
+    benchmarks:
+      cis_control: "12.1, 12.2"
+      nist_csf: "PR.PT-5, RC.RP-1"
+      mitre_technique: "T1499"
+    chaos_trigger:
+      experiment: simulate_az_failure
+      target_type: rds_subnet_group
+      impact: service_downtime
+  - id: A-RDS-5
+    name: Lateral DB Access from Non-App EC2 Allowed
+    severity: HIGH
+    description: A non-application EC2 instance in the same VPC can connect to the database, indicating weak east-west segmentation; this scenario attempts internal DB access and measures whether AWS Config rules or GuardDuty detections are triggered.
+    type: lateral_movement
+    check:
+      operator: equals
+      value: true
+    remediation: Restrict database security group ingress to only approved application security groups, enforce subnet-level segmentation and NACL controls, and implement alerting for anomalous internal database access.
+    benchmarks:
+      cis_control: "6.7, 12.3"
+      nist_csf: "PR.AC-5, DE.CM-1"
+      mitre_technique: "T1021"
+    chaos_trigger:
+      experiment: simulate_internal_lateral_db_access
+      target_type: rds_instance
+      impact: unauthorized_internal_access

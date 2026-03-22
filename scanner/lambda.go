@@ -66,10 +66,8 @@ func AuditLambda(ctx context.Context, cfg aws.Config) (LambdaAuditResults, error
 		if err == nil && urlConfig != nil {
 			authType := string(urlConfig.AuthType)
 			results.FunctionUrlAuthTypes[functionName] = authType
-			fmt.Printf("[DEBUG] Function %s has URL with auth type: %s\n", functionName, authType)
 		} else if err != nil {
-			// Log the error to see what's happening
-			fmt.Printf("[DEBUG] Error getting function URL config for %s: %v\n", functionName, err)
+			fmt.Printf("Error getting function URL config for %s: %v\n", functionName, err)
 		}
 
 		// 2. Check IAM role for AssumeRole permissions

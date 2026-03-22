@@ -7,8 +7,9 @@ import (
 )
 
 type FullAuditResults struct {
-	EC2 Ec2AuditResults `json:"ec2"`
-	RDS RdsAuditResults `json:"rds"`
+	EC2    Ec2AuditResults    `json:"ec2"`
+	RDS    RdsAuditResults    `json:"rds"`
+	Lambda LambdaAuditResults `json:"lambda"`
 }
 
 func (f FullAuditResults) Get(key string) any {
@@ -17,6 +18,8 @@ func (f FullAuditResults) Get(key string) any {
 		return f.EC2
 	case "rds":
 		return f.RDS
+	case "lambda":
+		return f.Lambda
 	default:
 		return nil
 	}
@@ -36,6 +39,12 @@ func RunAudit(ctx context.Context, cfg aws.Config) (FullAuditResults, error) {
 		return results, err
 	}
 	results.RDS = rdsResults
+
+	lambdaResults, err := AuditLambda(ctx, cfg)
+	if err != nil {
+		return results, err
+	}
+	results.Lambda = lambdaResults
 
 	return results, nil
 }

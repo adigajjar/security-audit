@@ -20,6 +20,12 @@ var registry = map[string]ExtractorFunc{
 	"availability_resilience": extractRdsMultiAZ,
 	"lateral_movement":        extractRdsLateralAccess,
 	"rds_snapshot_public":     extractRdsSnapshotPublic,
+	//Lambda handlers
+	"privilege_escalation":    extractLambdaPrivilegeEscalation,
+	"secret_exposure":         extractLambdaSecretExposure,
+	"unauthenticated_access":  extractLambdaUnauthenticatedAccess,
+	"reliability_gap":         extractLambdaDLQConfig,
+	"supply_chain_risk":       extractLambdaSupplyChainRisk,
 }
 
 // ===== EC2 Handlers =====
@@ -208,5 +214,94 @@ func extractRdsSnapshotPublic(data interface{}) []interface{} {
 	for _, snapshotId := range rds.PublicSnapshots {
 		results = append(results, snapshotId)
 	}
+	return results
+}
+
+// ===== Lambda Handlers =====
+func extractLambdaPrivilegeEscalation(data interface{}) []interface{} {
+	lambda, ok := data.(scanner.LambdaAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	// Return function names that have roles with sts:AssumeRole permission
+	for range lambda.RolesWithAssumeRole {
+		results = append(results, true)
+	}
+
+	// If no functions found, return at least one result for comparison
+	if len(results) == 0 && len(lambda.Functions) > 0 {
+		results = append(results, false)
+	}
+
+	return results
+}
+
+func extractLambdaSecretExposure(data interface{}) []interface{} {
+	lambda, ok := data.(scanner.LambdaAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	// Return function names that have hardcoded secrets in environment variables
+	for range lambda.FunctionsWithSecrets {
+		results = append(results, true)
+	}
+
+	// If no functions found, return at least one result for comparison
+	if len(results) == 0 && len(lambda.Functions) > 0 {
+		results = append(results, false)
+	}
+
+	return results
+}
+
+func extractLambdaUnauthenticatedAccess(data interface{}) []interface{} {
+	lambda, ok := data.(scanner.LambdaAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	// Check Lambda Function URL authentication type
+	for _, authType := range lambda.FunctionUrlAuthTypes {
+		results = append(results, authType)
+	}
+	return results
+}
+
+func extractLambdaDLQConfig(data interface{}) []interface{} {
+	lambda, ok := data.(scanner.LambdaAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	// Check if DLQ is configured
+	for _, hasDLQ := range lambda.HasDLQ {
+		results = append(results, hasDLQ)
+	}
+	return results
+}
+
+func extractLambdaSupplyChainRisk(data interface{}) []interface{} {
+	lambda, ok := data.(scanner.LambdaAuditResults)
+	if !ok {
+		return nil
+	}
+
+	var results []interface{}
+	// Check for deprecated/vulnerable runtimes
+	for range lambda.DeprecatedRuntimes {
+		results = append(results, true)
+	}
+
+	// If no functions found, return at least one result for comparison
+	if len(results) == 0 && len(lambda.Functions) > 0 {
+		results = append(results, false)
+	}
+
 	return results
 }

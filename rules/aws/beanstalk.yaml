@@ -1,0 +1,90 @@
+rules:
+  - id: A-EB-1
+    name: Environment Variables Expose Secrets in Plaintext
+    severity: CRITICAL
+    description: Elastic Beanstalk environment variables contain plaintext secrets such as API keys, passwords, or tokens which are visible to anyone with console or API access.
+    type: plaintext_secrets_in_env
+    check:
+      operator: equals
+      value: true
+    remediation: Move secrets to AWS Secrets Manager or Parameter Store and reference them in the environment configuration instead of storing plaintext values.
+    benchmarks:
+      cis_control: "2.1.1"
+      nist_csf: "PR.DS-1"
+      mitre_technique: "T1552.001"
+    chaos_trigger:
+      experiment: simulate_secret_exposure
+      target_type: beanstalk_environment
+      impact: credential_leakage
+
+  - id: A-EB-2
+    name: Outdated Platform Version with Known CVEs
+    severity: HIGH
+    description: Elastic Beanstalk environment is running an outdated platform version that has known CVEs making it vulnerable to publicly documented exploits.
+    type: outdated_platform_version
+    check:
+      operator: equals
+      value: true
+    remediation: Update the Elastic Beanstalk platform version to the latest supported release and enable managed platform updates.
+    benchmarks:
+      cis_control: "2.6"
+      nist_csf: "PR.IP-12"
+      mitre_technique: "T1190"
+    chaos_trigger:
+      experiment: simulate_known_cve_exploit
+      target_type: beanstalk_environment
+      impact: remote_code_execution
+
+  - id: A-EB-3
+    name: No HTTPS on Load Balancer — HTTP Only
+    severity: HIGH
+    description: Elastic Beanstalk load balancer is configured to accept HTTP traffic only with no HTTPS listener exposing data in transit to interception and man-in-the-middle attacks.
+    type: no_https_on_load_balancer
+    check:
+      operator: equals
+      value: false
+    remediation: Add an HTTPS listener on port 443 with a valid SSL certificate and redirect all HTTP traffic to HTTPS.
+    benchmarks:
+      cis_control: "2.1.2"
+      nist_csf: "PR.DS-2"
+      mitre_technique: "T1557"
+    chaos_trigger:
+      experiment: simulate_traffic_interception
+      target_type: beanstalk_load_balancer
+      impact: data_in_transit_exposure
+
+  - id: A-EB-4
+    name: Enhanced Health Reporting Disabled
+    severity: MEDIUM
+    description: Elastic Beanstalk environment has enhanced health reporting disabled reducing observability and making it harder to detect failures or anomalous behavior during incidents.
+    type: enhanced_health_reporting_disabled
+    check:
+      operator: equals
+      value: false
+    remediation: Enable enhanced health reporting in the Elastic Beanstalk environment configuration to improve monitoring and incident detection.
+    benchmarks:
+      cis_control: "2.9"
+      nist_csf: "DE.CM-1"
+      mitre_technique: "T1562.008"
+    chaos_trigger:
+      experiment: simulate_degraded_health_blindspot
+      target_type: beanstalk_environment
+      impact: reduced_incident_visibility
+
+  - id: A-EB-5
+    name: EC2 Instance Profile Has Excessive IAM Permissions
+    severity: HIGH
+    description: The IAM instance profile attached to the Elastic Beanstalk EC2 instances grants excessive permissions beyond what the application requires violating the principle of least privilege.
+    type: excessive_instance_profile_permissions
+    check:
+      operator: equals
+      value: true
+    remediation: Scope the instance profile IAM role down to only the permissions required by the application and remove any wildcard or admin-level policies.
+    benchmarks:
+      cis_control: "1.16"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1078"
+    chaos_trigger:
+      experiment: simulate_instance_profile_abuse
+      target_type: beanstalk_instance_profile
+      impact: privilege_escalation

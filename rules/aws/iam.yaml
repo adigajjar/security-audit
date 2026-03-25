@@ -1,0 +1,108 @@
+rules:
+  - id: A-IAM-1
+    name: Overly Permissive Wildcard Policy
+    severity: CRITICAL
+    description: IAM policy allows wildcard actions (*) on wildcard resources (*) granting unrestricted access to all AWS services.
+    type: wildcard_policy
+    check:
+      operator: equals
+      value: true
+    remediation: Replace wildcard actions and resources with least-privilege specific permissions.
+    benchmarks:
+      cis_control: "1.16"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1078"
+    chaos_trigger:
+      experiment: simulate_privilege_escalation
+      target_type: iam_policy
+      impact: unauthorized_access
+
+  - id: A-IAM-2
+    name: Missing MFA on Root Account
+    severity: CRITICAL
+    description: Root account does not have MFA enabled leaving the most privileged account vulnerable to credential compromise.
+    type: root_mfa_disabled
+    check:
+      operator: equals
+      value: false
+    remediation: Enable MFA on the root account immediately and avoid using root for day-to-day operations.
+    benchmarks:
+      cis_control: "1.5"
+      nist_csf: "PR.AC-7"
+      mitre_technique: "T1078.004"
+    chaos_trigger:
+      experiment: simulate_root_account_compromise
+      target_type: iam_user
+      impact: full_account_takeover
+
+  - id: A-IAM-3
+    name: Missing MFA on Privileged IAM User
+    severity: HIGH
+    description: IAM user with admin permissions directly attached does not have MFA enabled exposing privileged access to credential theft.
+    type: privileged_user_mfa_disabled
+    check:
+      operator: equals
+      value: false
+    remediation: Enforce MFA for all IAM users with admin or elevated permissions using an IAM policy condition.
+    benchmarks:
+      cis_control: "1.10"
+      nist_csf: "PR.AC-7"
+      mitre_technique: "T1078"
+    chaos_trigger:
+      experiment: simulate_credential_compromise
+      target_type: iam_user
+      impact: privilege_escalation
+
+  - id: A-IAM-4
+    name: Stale Access Keys Older Than 90 Days
+    severity: HIGH
+    description: IAM user has an active access key that has not been rotated in over 90 days increasing the risk of undetected credential abuse.
+    type: stale_access_key
+    check:
+      operator: equals
+      value: true
+    remediation: Rotate or deactivate access keys older than 90 days and enforce key rotation policies.
+    benchmarks:
+      cis_control: "1.14"
+      nist_csf: "PR.AC-1"
+      mitre_technique: "T1528"
+    chaos_trigger:
+      experiment: simulate_stale_key_abuse
+      target_type: iam_access_key
+      impact: unauthorized_api_access
+
+  - id: A-IAM-5
+    name: Cross-Account Role Trust Misconfiguration
+    severity: HIGH
+    description: IAM role has an overly permissive trust policy allowing any principal (*) to assume it enabling unauthorized cross-account access.
+    type: cross_account_trust_misconfiguration
+    check:
+      operator: equals
+      value: true
+    remediation: Restrict role trust policies to specific trusted account IDs and require external ID conditions.
+    benchmarks:
+      cis_control: "1.16"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1199"
+    chaos_trigger:
+      experiment: simulate_cross_account_role_assumption
+      target_type: iam_role
+      impact: lateral_movement
+
+  - id: A-IAM-6
+    name: Inline Policy Bypassing SCP Guardrails
+    severity: MEDIUM
+    description: IAM user or role has an inline policy attached directly which can bypass Service Control Policy guardrails and evade centralized governance.
+    type: inline_policy_bypass
+    check:
+      operator: equals
+      value: true
+    remediation: Remove inline policies and replace with managed policies that are subject to SCP enforcement.
+    benchmarks:
+      cis_control: "1.16"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1078"
+    chaos_trigger:
+      experiment: simulate_policy_bypass
+      target_type: iam_user
+      impact: guardrail_evasion

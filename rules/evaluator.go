@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	chaosec2 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/ec2"
 	"github.com/adigajjar/security-audit/scanner"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 )
 
 type RuleResult struct {
@@ -18,10 +21,10 @@ type RuleResult struct {
 
 
 
-func Evaluate(rules map[string]Rules, scannedData scanner.FullAuditResults) ([]RuleResult, error) {
+func Evaluate(rules map[string]Rules, scannedData scanner.FullAuditResults, cfg aws.Config) ([]RuleResult, error) {
 	var results []RuleResult
 
-
+	client := awsec2.NewFromConfig(cfg)
 	
 	for service, ruleSet := range rules {
 		if ruleSet.Rules == nil{
@@ -34,7 +37,7 @@ func Evaluate(rules map[string]Rules, scannedData scanner.FullAuditResults) ([]R
 		}
 
 		for _, rule := range ruleSet.Rules {
-			result := evaluateRule(rule, data)
+			result := evaluateRule(rule, data, client)
 			results = append(results, result)
 		}
 	}
@@ -42,7 +45,7 @@ func Evaluate(rules map[string]Rules, scannedData scanner.FullAuditResults) ([]R
 	return results, nil
 }
 
-func evaluateRule(rule Rule, data interface{}) RuleResult{
+func evaluateRule(rule Rule, data interface{}, client *awsec2.Client) RuleResult{
 	handler, ok := registry[rule.Type]
 	if !ok{
 		return RuleResult{
@@ -57,6 +60,10 @@ func evaluateRule(rule Rule, data interface{}) RuleResult{
 	values := handler(data)
 
 	if Compare(values, rule.Check.Operator, rule.Check.Value){
+		// if rule.ChaosTrigger != nil && rule.ChaosTrigger.Experiment == "simulate_brute_force_exposure" {
+		// 	triggerBruteForceChaos(client, data)
+		// }
+
 		return RuleResult{
 			RuleID:      rule.ID,
 			RuleName:    rule.Name,
@@ -104,5 +111,54 @@ func compareSingle(actual interface{}, operator string, expected interface{}) bo
 		return actual.(int) < expected.(int)
 	default:
 		return false
+	}
+}
+
+func triggerBruteForceChaos(client *awsec2.Client, data interface{}) {
+	ec2Data, ok := data.(scanner.Ec2AuditResults)
+	if !ok {
+		return
+	}
+
+	for _, sg := range ec2Data.SecurityGroups {
+		isOpen := false
+		for _, perm := range sg.IpPermissions {
+			for _, r := range perm.IpRanges {
+				if r.CidrIp != nil && *r.CidrIp == "0.0.0.0/0" {
+					isOpen = true
+					break
+				}
+			}
+			if isOpen {
+				break
+			}
+		}
+
+		if isOpen {
+			for _, inst := range ec2Data.Instances {
+				hasSg := false
+				for _, isg := range inst.SecurityGroups {
+					if *isg.GroupId == *sg.GroupId {
+						hasSg = true
+						break
+					}
+				}
+
+				if hasSg && inst.InstanceId != nil {
+					fmt.Printf("[Chaos Trigger] Starting brute force exposure on instance %s (SG: %s)\n", *inst.InstanceId, *sg.GroupId)
+					exp := chaosec2.BruteForceExposure{
+						Client:          client,
+						SecurityGroupID: *sg.GroupId,
+						InstanceID:      *inst.InstanceId,
+					}
+					res, err := exp.Run()
+					if err != nil {
+						fmt.Printf("[Chaos Trigger] Experiment failed: %v\n", err)
+					} else {
+						fmt.Printf("[Chaos Trigger] Experiment completed: Impact=%s, Status=%s\n", res.Impact, res.Status)
+					}
+				}
+			}
+		}
 	}
 }

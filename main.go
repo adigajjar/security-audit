@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error loading rules: %v\n", err)
 	} else {
-		findings, _ := rules.Evaluate(ru, scannedResults)
+		findings, _ := rules.Evaluate(ru, scannedResults, cfg)
 		b, _ := json.MarshalIndent(findings, "", "  ")
 		fmt.Println("Rule findings:", string(b))
 	}

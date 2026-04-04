@@ -17,81 +17,34 @@ type Ec2AuditResults struct {
 	PublicSnapshots []string             `json:"PublicSnapshots"`
 }
 
-// AuditEC2 gathers all required EC2 security findings.
+
 func AuditEC2(ctx context.Context, cfg aws.Config) (Ec2AuditResults, error) {
 	client := ec2.NewFromConfig(cfg)
 	var results Ec2AuditResults
 
-	// Volumes
+
 	volumes, _ := AuditVolumes(ctx, client)
 	results.Volumes = volumes
 
-	// Instances
+
 	instances, _ := AuditInstances(ctx, client)
 	results.Instances = instances
 
-	// SGs
+
 	sgs, _ := AuditSecurityGroups(ctx, client)
 	results.SecurityGroups = sgs
 
-	// AMIs
+
 	amis, _ := AuditImages(ctx, client)
 	results.Images = amis
 
-	// Snapshots
+
 	snapshots, publicSnapshots, _ := AuditSnapshots(ctx, client)
 	results.Snapshots = snapshots
 	results.PublicSnapshots = publicSnapshots
 
 	return results, nil
 }
-
-// func getPublicSubnets(ctx context.Context, client *ec2.Client) map[string]bool {
-// 	publicSubnets := make(map[string]bool)
-// 	subnetExplicitRT := make(map[string]string)
-// 	rtIsPublic := make(map[string]bool)
-// 	vpcMainRT := make(map[string]string)
-
-// 	out, err := client.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{})
-// 	if err == nil {
-// 		for _, rt := range out.RouteTables {
-// 			isPub := false
-// 			for _, r := range rt.Routes {
-// 				if r.GatewayId != nil && strings.HasPrefix(*r.GatewayId, "igw-") {
-// 					isPub = true
-// 					break
-// 				}
-// 			}
-// 			rtIsPublic[*rt.RouteTableId] = isPub
-
-// 			for _, assoc := range rt.Associations {
-// 				if assoc.Main != nil && *assoc.Main {
-// 					if rt.VpcId != nil {
-// 						vpcMainRT[*rt.VpcId] = *rt.RouteTableId
-// 					}
-// 				} else if assoc.SubnetId != nil {
-// 					subnetExplicitRT[*assoc.SubnetId] = *rt.RouteTableId
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	subOut, err := client.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{})
-// 	if err == nil {
-// 		for _, sub := range subOut.Subnets {
-// 			subId := *sub.SubnetId
-// 			rtId, ok := subnetExplicitRT[subId]
-// 			if !ok {
-// 				if sub.VpcId != nil {
-// 					rtId = vpcMainRT[*sub.VpcId]
-// 				}
-// 			}
-// 			publicSubnets[subId] = rtIsPublic[rtId]
-// 		}
-// 	}
-
-// 	return publicSubnets
-// }
 
 func AuditVolumes(ctx context.Context, client *ec2.Client) ([]types.Volume, error) {
 	var audits []types.Volume

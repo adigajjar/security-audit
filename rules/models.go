@@ -1,5 +1,31 @@
 package rules
 
+import (
+	auditexperiments "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments"
+	awsec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	"gopkg.in/yaml.v3"
+)
+
+type SimulationFunction func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error)
+
+var SimulationRegistry = map[string]SimulationFunction{}
+
+func (sf *SimulationFunction) UnmarshalYAML(value *yaml.Node) error {
+	var funcName string
+	if err := value.Decode(&funcName); err != nil {
+		return err
+	}
+	
+	if fn, ok := SimulationRegistry[funcName]; ok {
+		*sf = fn
+	} else {
+		*sf = func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error) {
+			return nil, nil
+		}
+	}
+	return nil
+}
+
 type Rules struct {
 	Rules []Rule `yaml:"rules" json:"rules"`
 }
@@ -23,9 +49,9 @@ type Benchmarks struct {
 }
 
 type ChaosTrigger struct {
-	Experiment string `yaml:"experiment" json:"experiment"`
-	TargetType string `yaml:"target_type" json:"target_type"`
-	Impact     string `yaml:"impact" json:"impact"`
+	Experiment SimulationFunction `yaml:"experiment" json:"experiment"`
+	TargetType string             `yaml:"target_type" json:"target_type"`
+	Impact     string             `yaml:"impact" json:"impact"`
 }
 
 type Check struct {

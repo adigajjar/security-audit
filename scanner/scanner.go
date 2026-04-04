@@ -11,7 +11,7 @@ type FullAuditResults struct {
 	RDS    RdsAuditResults    `json:"rds"`
 	Lambda    LambdaAuditResults    `json:"lambda"`
 	IAM       IamAuditResults       `json:"iam"`
-	Beanstalk BeanstalkAuditResults `json:"beanstalk"`
+	// Beanstalk BeanstalkAuditResults `json:"beanstalk"`
 }
 
 func (f FullAuditResults) Get(key string) any {
@@ -24,8 +24,8 @@ func (f FullAuditResults) Get(key string) any {
 		return f.Lambda
 	case "iam":
 		return f.IAM
-	case "beanstalk":
-		return f.Beanstalk
+	// case "beanstalk":
+	// 	return f.Beanstalk
 	default:
 		return nil
 	}
@@ -54,10 +54,10 @@ func RunAudit(ctx context.Context, cfg aws.Config) (FullAuditResults, error) {
 		results.IAM = iamResults
 	}
 
-	beanstalkResults, err := AuditBeanstalk(ctx, cfg)
-	if err == nil {
-		results.Beanstalk = beanstalkResults
-	}
+	// beanstalkResults, err := AuditBeanstalk(ctx, cfg)
+	// if err == nil {
+	// 	results.Beanstalk = beanstalkResults
+	// }
 
 	return results, nil
 }

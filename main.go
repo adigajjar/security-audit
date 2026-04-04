@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/adigajjar/security-audit/connector"
+	"github.com/adigajjar/security-audit/report"
 	"github.com/adigajjar/security-audit/rules"
 	"github.com/adigajjar/security-audit/scanner"
 )
@@ -32,9 +33,15 @@ func main() {
 	} else {
 		findings, _ := rules.Evaluate(ru, scannedResults, cfg)
 		b, _ := json.MarshalIndent(findings, "", "  ")
-		fmt.Println("Rule findings:", string(b))
-	}
+		fmt.Println("Rule findings (JSON):", string(b))
 
-	// b, _ := json.MarshalIndent(scannedResults, "", "  ")
-	// fmt.Println("Scanner results:", string(b))
+		// Generate the markdown report
+		reportPath := "vapt_report.md"
+		err = report.GenerateVAPTReport(findings, reportPath)
+		if err != nil {
+			fmt.Printf("Failed to generate VAPT report: %v\n", err)
+		} else {
+			fmt.Printf("Generated comprehensive VAPT report at %s\n", reportPath)
+		}
+	}
 }

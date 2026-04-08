@@ -51,3 +51,5 @@ require (
 	github.com/aws/smithy-go v1.24.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+replace github.com/ShubhankarSalunke/lucifer/connectors => ../connectors

@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/adigajjar/security-audit/connector"
 	"github.com/adigajjar/security-audit/report"
 	"github.com/adigajjar/security-audit/rules"
 	"github.com/adigajjar/security-audit/scanner"
+	"github.com/ShubhankarSalunke/lucifer/connectors"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	roleArn := "arn:aws:iam::633825695905:role/VAPTAuditRole"
 	externalId := "VAPTAgent"
 
-	cfg, err := connector.ConnectAws(ctx, roleArn, externalId)
+	cfg, err := connectors.ConnectAws(ctx, roleArn, externalId)
 	if err != nil {
 		panic(err)
 	}

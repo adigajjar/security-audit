@@ -10,12 +10,16 @@ import (
 
 	auditexperiments "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments"
 	chaosec2 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/ec2"
+	chaoss3 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/s3"
 )
 
 func init() {
-	SimulationRegistry["simulate_brute_force_exposure"] = chaosec2.SimulateBruteForceExposure
+	// SimulationRegistry["simulate_brute_force_exposure"] = chaosec2.SimulateBruteForceExposure
 	SimulationRegistry["simulate_ssrf_metadata_theft"] = chaosec2.SimulateSSRFMetadataTheft
-	SimulationRegistry["simulate_snapshot_exfiltration"] = chaosec2.SimulateEBSUnencryptedAccess
+	// SimulationRegistry["simulate_snapshot_exfiltration"] = chaosec2.SimulateEBSUnencryptedAccess
+	// SimulationRegistry["simulate_public_snapshot_scrape"] = chaosec2.SimulatePublicSnapshotScrape
+	// SimulationRegistry["simulate_data_exfiltration"] = chaoss3.SimulateDataExfiltration
+	SimulationRegistry["simulate_unencrypted_write"] = chaoss3.SimulateUnencryptedWrite
 }
 
 type RuleResult struct {

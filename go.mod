@@ -4,25 +4,23 @@ go 1.26.1
 
 replace github.com/ShubhankarSalunke/chaos-engineering => ../chaos-engineering
 
-replace github.com/ShubhankarSalunke/lucifer/connectors => ../connectors
-
 require (
 	github.com/ShubhankarSalunke/chaos-engineering v0.0.0-00010101000000-000000000000
 	github.com/ShubhankarSalunke/lucifer/connectors v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.41.5
-	github.com/aws/aws-sdk-go-v2/config v1.32.13
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.13
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.296.0
 	github.com/aws/aws-sdk-go-v2/service/iam v1.53.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10
 )
 
 require (
+	github.com/aws/aws-sdk-go-v2/config v1.32.13 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.68.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/configservice v1.62.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/guardduty v1.74.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.68.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
 )
 
 require (

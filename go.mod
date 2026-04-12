@@ -16,6 +16,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.13 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.13 // indirect
+	github.com/aws/aws-sdk-go-v2/service/cloudtrail v1.55.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.68.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/configservice v1.62.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/guardduty v1.74.2 // indirect

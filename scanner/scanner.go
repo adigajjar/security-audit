@@ -34,37 +34,62 @@ func (f FullAuditResults) Get(key string) any {
 	}
 }
 
-func RunAudit(ctx context.Context, cfg aws.Config) (FullAuditResults, error) {
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a || b == "all" {
+			return true
+		}
+	}
+	return false
+}
+
+func RunAudit(ctx context.Context, cfg aws.Config, services ...string) (FullAuditResults, error) {
 	var results FullAuditResults
 
-	ec2Results, err := AuditEC2(ctx, cfg)
-	if err == nil {
-		results.EC2 = ec2Results
+	if len(services) == 0 {
+		services = []string{"all"}
 	}
 
-	rdsResults, err := AuditRDS(ctx, cfg)
-	if err == nil {
-		results.RDS = rdsResults
+	if stringInSlice("ec2", services) {
+		ec2Results, err := AuditEC2(ctx, cfg)
+		if err == nil {
+			results.EC2 = ec2Results
+		}
 	}
 
-	lambdaResults, err := AuditLambda(ctx, cfg)
-	if err == nil {
-		results.Lambda = lambdaResults
+	if stringInSlice("rds", services) {
+		rdsResults, err := AuditRDS(ctx, cfg)
+		if err == nil {
+			results.RDS = rdsResults
+		}
 	}
 
-	iamResults, err := AuditIAM(ctx, cfg)
-	if err == nil {
-		results.IAM = iamResults
+	if stringInSlice("lambda", services) {
+		lambdaResults, err := AuditLambda(ctx, cfg)
+		if err == nil {
+			results.Lambda = lambdaResults
+		}
 	}
 
-	s3Results, err := AuditS3(ctx, cfg)
-	if err == nil {
-		results.S3 = s3Results
+	if stringInSlice("iam", services) {
+		iamResults, err := AuditIAM(ctx, cfg)
+		if err == nil {
+			results.IAM = iamResults
+		}
 	}
 
-	// beanstalkResults, err := AuditBeanstalk(ctx, cfg)
-	// if err == nil {
-	// 	results.Beanstalk = beanstalkResults
+	if stringInSlice("s3", services) {
+		s3Results, err := AuditS3(ctx, cfg)
+		if err == nil {
+			results.S3 = s3Results
+		}
+	}
+
+	// if stringInSlice("beanstalk", services) {
+	// 	beanstalkResults, err := AuditBeanstalk(ctx, cfg)
+	// 	if err == nil {
+	// 		results.Beanstalk = beanstalkResults
+	// 	}
 	// }
 
 	return results, nil

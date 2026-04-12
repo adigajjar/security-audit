@@ -10,12 +10,26 @@ import (
 
 	auditexperiments "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments"
 	chaosec2 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/ec2"
+	chaosrds "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/rds"
+	chaoss3 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/s3"
 )
 
 func init() {
-	SimulationRegistry["simulate_brute_force_exposure"] = chaosec2.SimulateBruteForceExposure
+	// SimulationRegistry["simulate_brute_force_exposure"] = chaosec2.SimulateBruteForceExposure
 	SimulationRegistry["simulate_ssrf_metadata_theft"] = chaosec2.SimulateSSRFMetadataTheft
-	SimulationRegistry["simulate_snapshot_exfiltration"] = chaosec2.SimulateEBSUnencryptedAccess
+	// SimulationRegistry["simulate_snapshot_exfiltration"] = chaosec2.SimulateEBSUnencryptedAccess
+	// SimulationRegistry["simulate_public_snapshot_scrape"] = chaosec2.SimulatePublicSnapshotScrape
+	// SimulationRegistry["simulate_data_exfiltration"] = chaoss3.SimulateDataExfiltration
+	// SimulationRegistry["simulate_unencrypted_write"] = chaoss3.SimulateUnencryptedWrite
+	// SimulationRegistry["simulate_ransomware_delete"] = chaoss3.SimulateRansomwareDelete
+	SimulationRegistry["simulate_silent_exfiltration"] = chaoss3.SimulateSilentExfiltration
+
+	// RDS Attack Functions
+	SimulationRegistry["simulate_db_brute_force"] = chaosrds.SimulateDBBruteForce
+	SimulationRegistry["simulate_db_corruption"] = chaosrds.SimulateDBCorruption
+	SimulationRegistry["simulate_snapshot_data_leak"] = chaosrds.SimulateSnapshotDataLeak
+	SimulationRegistry["simulate_az_failure"] = chaosrds.SimulateAZFailure
+	SimulationRegistry["simulate_internal_lateral_db_access"] = chaosrds.SimulateInternalLateralDBAccess
 }
 
 type RuleResult struct {
@@ -28,15 +42,13 @@ type RuleResult struct {
 	Experiments []*auditexperiments.ExperimentResult `json:"experiments"`
 }
 
-
-
 func Evaluate(rules map[string]Rules, scannedData scanner.FullAuditResults, cfg aws.Config) ([]RuleResult, error) {
 	var results []RuleResult
 
 	client := awsec2.NewFromConfig(cfg)
-	
+
 	for service, ruleSet := range rules {
-		if ruleSet.Rules == nil{
+		if ruleSet.Rules == nil {
 			continue
 		}
 
@@ -54,21 +66,21 @@ func Evaluate(rules map[string]Rules, scannedData scanner.FullAuditResults, cfg 
 	return results, nil
 }
 
-func evaluateRule(rule Rule, data interface{}, client *awsec2.Client) RuleResult{
+func evaluateRule(rule Rule, data interface{}, client *awsec2.Client) RuleResult {
 	handler, ok := registry[rule.Type]
-	if !ok{
+	if !ok {
 		return RuleResult{
-			RuleID:      rule.ID,
-			RuleName:    rule.Name,
-			Severity:    rule.Severity,
-			Status:      "ERROR",
-			Message:     fmt.Sprintf("unknown rule type: %s", rule.Type),
+			RuleID:   rule.ID,
+			RuleName: rule.Name,
+			Severity: rule.Severity,
+			Status:   "ERROR",
+			Message:  fmt.Sprintf("unknown rule type: %s", rule.Type),
 		}
 	}
 
 	values := handler(data)
 
-	if Compare(values, rule.Check.Operator, rule.Check.Value){
+	if Compare(values, rule.Check.Operator, rule.Check.Value) {
 
 		var experiments []*auditexperiments.ExperimentResult
 		if rule.ChaosTrigger != nil && rule.ChaosTrigger.Experiment != nil {
@@ -91,20 +103,20 @@ func evaluateRule(rule Rule, data interface{}, client *awsec2.Client) RuleResult
 	}
 
 	return RuleResult{
-		RuleID:      rule.ID,
-		RuleName:    rule.Name,
-		Severity:    rule.Severity,
-		Status:      "PASS",
+		RuleID:   rule.ID,
+		RuleName: rule.Name,
+		Severity: rule.Severity,
+		Status:   "PASS",
 	}
 }
 
 func Compare(values []interface{}, operator string, expected interface{}) bool {
-	if len(values) == 0{
+	if len(values) == 0 {
 		return false
 	}
 
 	for _, actual := range values {
-		if compareSingle(actual, operator, expected){
+		if compareSingle(actual, operator, expected) {
 			return true
 		}
 	}

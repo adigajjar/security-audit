@@ -45,7 +45,14 @@ var registry = map[string]ExtractorFunc{
 	"enhanced_health_reporting_disabled": extractBeanstalkEnhancedHealthReporting,
 	"plaintext_secrets_in_env": extractBeanstalkEnvironmentVariables,
 	"outdated_platform_version": extractBeanstalkVersionLifecycle,
-	
+
+	//S3 handlers
+	"s3_block_public_access": extractS3BlockPublicAccess,
+	"s3_encryption":          extractS3Encryption,
+	"s3_versioning":          extractS3Versioning,
+	"s3_mfa_delete":          extractS3MFADelete,
+	"s3_public_policy":       extractS3PublicPolicy,
+	"s3_access_logging":      extractS3AccessLogging,
 }
 
 // ===== EC2 Handlers =====
@@ -574,5 +581,72 @@ func extractBeanstalkVersionLifecycle(data interface{}) []interface{} {
 	if len(results) == 0 {
 		results = append(results, false)
 	}
+	return results
+}
+
+// ===== S3 Handlers =====
+func extractS3BlockPublicAccess(data interface{}) []interface{} {
+	s3, ok := data.(scanner.S3AuditResults)
+	if !ok { return nil }
+	var results []interface{}
+	for _, v := range s3.PublicAccessBlocks {
+		results = append(results, v)
+	}
+	if len(results) == 0 { results = append(results, false) }
+	return results
+}
+
+func extractS3Encryption(data interface{}) []interface{} {
+	s3, ok := data.(scanner.S3AuditResults)
+	if !ok { return nil }
+	var results []interface{}
+	for _, v := range s3.EncryptionEnabled {
+		results = append(results, v)
+	}
+	if len(results) == 0 { results = append(results, false) }
+	return results
+}
+
+func extractS3Versioning(data interface{}) []interface{} {
+	s3, ok := data.(scanner.S3AuditResults)
+	if !ok { return nil }
+	var results []interface{}
+	for _, v := range s3.VersioningEnabled {
+		results = append(results, v)
+	}
+	if len(results) == 0 { results = append(results, false) }
+	return results
+}
+
+func extractS3MFADelete(data interface{}) []interface{} {
+	s3, ok := data.(scanner.S3AuditResults)
+	if !ok { return nil }
+	var results []interface{}
+	for _, v := range s3.MFADeleteEnabled {
+		results = append(results, v)
+	}
+	if len(results) == 0 { results = append(results, false) }
+	return results
+}
+
+func extractS3PublicPolicy(data interface{}) []interface{} {
+	s3, ok := data.(scanner.S3AuditResults)
+	if !ok { return nil }
+	var results []interface{}
+	for _, v := range s3.PolicyAllowsPublic {
+		results = append(results, v)
+	}
+	if len(results) == 0 { results = append(results, false) }
+	return results
+}
+
+func extractS3AccessLogging(data interface{}) []interface{} {
+	s3, ok := data.(scanner.S3AuditResults)
+	if !ok { return nil }
+	var results []interface{}
+	for _, v := range s3.LoggingEnabled {
+		results = append(results, v)
+	}
+	if len(results) == 0 { results = append(results, false) }
 	return results
 }

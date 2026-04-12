@@ -3,8 +3,8 @@ rules:
     name: Block Public Access Disabled
     severity: CRITICAL
     description: S3 Block Public Access is disabled which may allow public exposure of sensitive data.
+    type: s3_block_public_access
     check:
-      field: public_access_block.BlockPublicAcls
       operator: equals
       value: false
     remediation: Enable S3 Block Public Access for the bucket and at the account level.
@@ -23,8 +23,8 @@ rules:
     name: Server-Side Encryption Not Enforced
     severity: HIGH
     description: Server-side encryption is not enforced on the S3 bucket, allowing objects to be stored without encryption.
+    type: s3_encryption
     check:
-      field: bucket.encryption.enabled
       operator: equals
       value: false
     remediation: Configure bucket policies to enforce server-side encryption using SSE-S3 or SSE-KMS.
@@ -43,8 +43,8 @@ rules:
     name: Versioning Disabled
     severity: MEDIUM
     description: Bucket versioning is disabled which increases the risk of data loss from accidental deletion or overwrites.
+    type: s3_versioning
     check:
-      field: bucket.versioning_enabled
       operator: equals
       value: false
     remediation: Enable versioning for the S3 bucket to maintain object history and allow recovery.
@@ -63,8 +63,8 @@ rules:
     name: MFA-Delete Disabled
     severity: MEDIUM
     description: MFA-Delete is disabled for the S3 bucket. This means versioning status cannot be changed and versions cannot be permanently deleted without additional multi-factor authentication.
+    type: s3_mfa_delete
     check:
-      field: bucket.mfa_delete_enabled
       operator: equals
       value: false
     remediation: Enable MFA-Delete for the S3 bucket to provide an extra layer of security against malicious deletion.
@@ -83,8 +83,8 @@ rules:
     name: Publicly Accessible Bucket Policy
     severity: HIGH
     description: The bucket policy is overly permissive, allowing public or broad access which may lead to unauthorized data disclosure.
+    type: s3_public_policy
     check:
-      field: bucket.policy_allows_public
       operator: equals
       value: true
     remediation: Restrict bucket policies to specific authorized AWS principals and remove public access.
@@ -104,8 +104,8 @@ rules:
     name: Access Logging Disabled
     severity: MEDIUM
     description: S3 access logging is disabled which reduces visibility into bucket access and potential misuse.
+    type: s3_access_logging
     check:
-      field: bucket.logging.enabled
       operator: equals
       value: false
     remediation: Enable server access logging for the bucket and store logs in a separate logging bucket.

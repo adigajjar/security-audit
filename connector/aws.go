@@ -8,5 +8,11 @@ import (
 )
 
 func ConnectAws(ctx context.Context, roleArn string, externalId string) (aws.Config, error) {
-	return connectors.ConnectAws(ctx, roleArn, externalId)
+	
+	awsCfg := connectors.AWSConfig{
+		RoleARN:    roleArn,
+		ExternalID: externalId,
+	}
+
+	return connectors.ConnectAws(ctx, awsCfg)
 }

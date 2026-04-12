@@ -10,6 +10,7 @@ import (
 
 	auditexperiments "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments"
 	chaosec2 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/ec2"
+	chaosrds "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/rds"
 	chaoss3 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/s3"
 )
 
@@ -20,6 +21,13 @@ func init() {
 	// SimulationRegistry["simulate_public_snapshot_scrape"] = chaosec2.SimulatePublicSnapshotScrape
 	// SimulationRegistry["simulate_data_exfiltration"] = chaoss3.SimulateDataExfiltration
 	SimulationRegistry["simulate_unencrypted_write"] = chaoss3.SimulateUnencryptedWrite
+
+	// RDS Attack Functions
+	SimulationRegistry["simulate_db_brute_force"] = chaosrds.SimulateDBBruteForce
+	SimulationRegistry["simulate_db_corruption"] = chaosrds.SimulateDBCorruption
+	SimulationRegistry["simulate_snapshot_data_leak"] = chaosrds.SimulateSnapshotDataLeak
+	SimulationRegistry["simulate_az_failure"] = chaosrds.SimulateAZFailure
+	SimulationRegistry["simulate_internal_lateral_db_access"] = chaosrds.SimulateInternalLateralDBAccess
 }
 
 type RuleResult struct {

@@ -34,12 +34,16 @@ func main() {
 
 	roleArn := "arn:aws:iam::633825695905:role/VAPTAuditRole"
 	externalId := "VAPTAgent"
+	awsConfig := connectors.AWSConfig{
+		RoleARN:    "arn:aws:iam::633825695905:role/VAPTAuditRole",
+		ExternalID: "VAPTAgent",
+	}
 
-	cfg, err := connectors.ConnectAws(ctx, roleArn, externalId)
+	cfg, err := connectors.ConnectAws(ctx, awsConfig)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	scannedResults, err := scanner.RunAudit(ctx, cfg, servicesToScan...)
 	if err != nil {
 		panic(err)

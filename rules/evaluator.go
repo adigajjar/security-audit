@@ -1,15 +1,19 @@
 package rules
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/adigajjar/security-audit/scanner"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	awsec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	awslambda "github.com/aws/aws-sdk-go-v2/service/lambda"
 
 	auditexperiments "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments"
 	chaosec2 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/ec2"
+	chaoslambda "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/lambda"
 	chaosrds "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/rds"
 	chaoss3 "github.com/ShubhankarSalunke/chaos-engineering/experiments/audit-experiments/aws/s3"
 )
@@ -30,6 +34,49 @@ func init() {
 	SimulationRegistry["simulate_snapshot_data_leak"] = chaosrds.SimulateSnapshotDataLeak
 	SimulationRegistry["simulate_az_failure"] = chaosrds.SimulateAZFailure
 	SimulationRegistry["simulate_internal_lateral_db_access"] = chaosrds.SimulateInternalLateralDBAccess
+
+	// Lambda Attack Functions - wrapped to match SimulationFunction signature
+	SimulationRegistry["simulate_lambda_role_abuse"] = func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error) {
+		// Extract Lambda client from context - for now, create a new one
+		cfg, err := config.LoadDefaultConfig(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		lambdaClient := awslambda.NewFromConfig(cfg)
+		return chaoslambda.SimulateLambdaRoleAbuse(lambdaClient, data)
+	}
+	SimulationRegistry["simulate_env_var_secret_harvest"] = func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error) {
+		cfg, err := config.LoadDefaultConfig(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		lambdaClient := awslambda.NewFromConfig(cfg)
+		return chaoslambda.SimulateEnvVarSecretHarvest(lambdaClient, data)
+	}
+	SimulationRegistry["simulate_unauthenticated_invocation"] = func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error) {
+		cfg, err := config.LoadDefaultConfig(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		lambdaClient := awslambda.NewFromConfig(cfg)
+		return chaoslambda.SimulateUnauthenticatedInvocation(lambdaClient, data)
+	}
+	SimulationRegistry["simulate_silent_function_failure"] = func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error) {
+		cfg, err := config.LoadDefaultConfig(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		lambdaClient := awslambda.NewFromConfig(cfg)
+		return chaoslambda.SimulateSilentFunctionFailure(lambdaClient, data)
+	}
+	SimulationRegistry["simulate_supply_chain_exploit"] = func(client *awsec2.Client, data interface{}) ([]*auditexperiments.ExperimentResult, error) {
+		cfg, err := config.LoadDefaultConfig(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		lambdaClient := awslambda.NewFromConfig(cfg)
+		return chaoslambda.SimulateSupplyChainExploit(lambdaClient, data)
+	}
 }
 
 type RuleResult struct {

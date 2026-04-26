@@ -32,8 +32,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	roleArn := "arn:aws:iam::633825695905:role/VAPTAuditRole"
-	externalId := "VAPTAgent"
 	awsConfig := connectors.AWSConfig{
 		RoleARN:    "arn:aws:iam::633825695905:role/VAPTAuditRole",
 		ExternalID: "VAPTAgent",

@@ -1,0 +1,132 @@
+rules:
+  - id: G-IAM-1
+    name: Primitive Roles (Owner/Editor) Assigned to Users
+    severity: CRITICAL
+    description: >
+      Basic roles (roles/owner, roles/editor) grant far broader permissions than
+      needed and violate the principle of least-privilege at project level. Any
+      user or service account holding one of these roles can read, write, and
+      delete most GCP resources in the project without restriction.
+    type: gcp_primitive_role_assigned
+    check:
+      operator: equals
+      value: true
+    remediation: >
+      Replace roles/owner and roles/editor with purpose-built predefined roles
+      (e.g. roles/storage.objectAdmin for GCS access). Use IAM Conditions to
+      restrict scope by resource or time. Review bindings quarterly via
+      IAM Recommender.
+    benchmarks:
+      cis_control: "1.4"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1078.004"
+    chaos_trigger:
+      experiment: simulate_owner_role_abuse
+      target_type: iam_binding
+      impact: full_project_compromise
+
+  - id: G-IAM-2
+    name: Service Account Key File Downloaded and Stored
+    severity: HIGH
+    description: >
+      A USER_MANAGED service account key (exported JSON) exists. These keys can
+      be downloaded and used indefinitely — GCP does not automatically rotate
+      them. A leaked key allows an attacker to authenticate as the service
+      account from anywhere in the world without expiry.
+    type: gcp_sa_user_managed_key_exists
+    check:
+      operator: equals
+      value: true
+    remediation: >
+      Delete all USER_MANAGED SA keys and use Workload Identity Federation or
+      the Attached Service Account mechanism instead. If a key is absolutely
+      required, enforce a 90-day maximum age via an Org Policy constraint
+      (iam.disableServiceAccountKeyCreation is preferred) and rotate regularly.
+    benchmarks:
+      cis_control: "1.4"
+      nist_csf: "PR.AC-1"
+      mitre_technique: "T1552.001"
+    chaos_trigger:
+      experiment: simulate_sa_key_leak
+      target_type: service_account_key
+      impact: persistent_credential_access
+
+  - id: G-IAM-3
+    name: Service Account Has Project-Level Admin Role
+    severity: CRITICAL
+    description: >
+      A service account is bound to a highly privileged role (roles/owner,
+      roles/editor, roles/iam.serviceAccountAdmin, etc.) at project scope.
+      If the workload using this SA is compromised, the attacker obtains
+      project-wide administrative access.
+    type: gcp_sa_project_admin_role
+    check:
+      operator: equals
+      value: true
+    remediation: >
+      Assign granular predefined roles scoped to the specific resource the
+      workload needs. Prefer Workload Identity so Kubernetes/Cloud Run
+      workloads inherit short-lived credentials. Audit via
+      `gcloud projects get-iam-policy <PROJECT>` and remove over-provisioned
+      bindings.
+    benchmarks:
+      cis_control: "1.5"
+      nist_csf: "PR.AC-6"
+      mitre_technique: "T1078.004"
+    chaos_trigger:
+      experiment: simulate_workload_privilege_escalation
+      target_type: service_account
+      impact: privilege_escalation
+
+  - id: G-IAM-4
+    name: Cross-Project IAM Binding Without Justification
+    severity: HIGH
+    description: >
+      An IAM policy on this project grants access to a service account whose
+      email belongs to a DIFFERENT GCP project. Without documented justification
+      and compensating controls this creates a lateral-movement path: compromising
+      the foreign project pivots directly into this project's resources.
+    type: gcp_cross_project_iam_binding
+    check:
+      operator: equals
+      value: true
+    remediation: >
+      Audit all IAM bindings for external service accounts with
+      `gcloud projects get-iam-policy`. Remove cross-project bindings that lack
+      a documented business justification. Use VPC Service Controls to restrict
+      cross-project API access. Prefer Workload Identity Federation for
+      cross-project authentication flows.
+    benchmarks:
+      cis_control: "1.16"
+      nist_csf: "PR.AC-4"
+      mitre_technique: "T1199"
+    chaos_trigger:
+      experiment: simulate_cross_project_pivot
+      target_type: iam_binding
+      impact: lateral_movement
+
+  - id: G-IAM-5
+    name: allUsers or allAuthenticatedUsers on Sensitive Resources
+    severity: CRITICAL
+    description: >
+      An IAM binding grants access to allUsers (entire internet) or
+      allAuthenticatedUsers (every Google-signed-in account) on this project
+      or one of its resources. This effectively makes the resource public and
+      enables unauthenticated (or trivially-authenticated) data exfiltration.
+    type: gcp_public_resource_access
+    check:
+      operator: equals
+      value: true
+    remediation: >
+      Remove allUsers and allAuthenticatedUsers from all IAM bindings immediately.
+      Enable the `constraints/iam.allowedPolicyMemberDomains` Org Policy to
+      prevent future assignments. Use Signed URLs or Identity-Aware Proxy for
+      controlled anonymous access scenarios.
+    benchmarks:
+      cis_control: "3.3"
+      nist_csf: "PR.AC-3"
+      mitre_technique: "T1530"
+    chaos_trigger:
+      experiment: simulate_public_resource_access
+      target_type: iam_binding
+      impact: unauthenticated_data_access
